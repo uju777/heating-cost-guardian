@@ -172,44 +172,41 @@
       }
 
       /* 난방 슬라이더 - 실내모드
-         범위: 10-40℃, 추천: 22-24℃
-         ├─ <22℃ (0-40%): 파랑 (초절약, 춥지만OK)
-         ├─ 22-24℃ (40-47%): 초록 (최적)
-         └─ >24℃ (47-100%): 빨강 (과다, 낭비) */
+         범위: 10-40℃ (30단위), 추천: 22-24℃
+         JS 로직: <22=cold, 22-24=saving, >24=danger
+         ├─ <22℃ = (22-10)/30 = 40%
+         └─ >24℃ = (24-10)/30 = 47% */
       #heating-slider.indoor-mode::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
           var(--zone-cold) 0%, var(--zone-cold) 40%,
           var(--zone-saving) 40%, var(--zone-saving) 47%,
-          var(--zone-caution) 47%, var(--zone-caution) 55%,
-          var(--zone-danger) 55%, var(--zone-danger) 100%
+          var(--zone-danger) 47%, var(--zone-danger) 100%
         );
       }
 
       /* 난방 슬라이더 - 온돌모드
-         범위: 40-85℃, 추천: 50-60℃
-         ├─ <50℃ (0-22%): 파랑 (미지근)
-         ├─ 50-60℃ (22-44%): 초록 (효율)
-         └─ >60℃ (44-100%): 빨강 (고온위험) */
+         범위: 40-85℃ (45단위), 추천: 50-60℃
+         JS 로직: <50=cold, 50-60=saving, >60=danger
+         ├─ <50℃ = (50-40)/45 = 22%
+         └─ >60℃ = (60-40)/45 = 44% */
       #heating-slider.ondol-mode::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
           var(--zone-cold) 0%, var(--zone-cold) 22%,
           var(--zone-saving) 22%, var(--zone-saving) 44%,
-          var(--zone-caution) 44%, var(--zone-caution) 55%,
-          var(--zone-danger) 55%, var(--zone-danger) 100%
+          var(--zone-danger) 44%, var(--zone-danger) 100%
         );
       }
 
       /* 온수 슬라이더
-         범위: 30-60℃, 추천: 40-45℃
-         ├─ <40℃ (0-33%): 파랑 (미지근)
-         ├─ 40-45℃ (33-50%): 초록 (최적)
-         └─ >45℃ (50-100%): 빨강 (낭비) */
+         범위: 30-60℃ (30단위), 추천: 40-45℃
+         JS 로직: <40=cold, 40-45=saving, >45=danger
+         ├─ 40℃ = (40-30)/30 = 33%
+         └─ 45℃ = (45-30)/30 = 50% */
       #hw-slider::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
           var(--zone-cold) 0%, var(--zone-cold) 33%,
           var(--zone-saving) 33%, var(--zone-saving) 50%,
-          var(--zone-caution) 50%, var(--zone-caution) 67%,
-          var(--zone-danger) 67%, var(--zone-danger) 100%
+          var(--zone-danger) 50%, var(--zone-danger) 100%
         );
       }
 
