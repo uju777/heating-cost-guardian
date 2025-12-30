@@ -180,12 +180,14 @@
         );
       }
 
-      /* 예약 슬라이더 (3시간 이상 최적) */
+      /* 예약 슬라이더 (3-4시간 최적) */
       #res-slider::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
-          #fecaca 0%, #fecaca 15%,
-          #fef08a 15%, #fef08a 25%,
-          #bbf7d0 25%, #bbf7d0 100%
+          #fecaca 0%, #fecaca 12%,
+          #fef08a 12%, #fef08a 25%,
+          #bbf7d0 25%, #bbf7d0 45%,
+          #fef08a 45%, #fef08a 55%,
+          #fecaca 55%, #fecaca 100%
         );
       }
 
@@ -1069,7 +1071,7 @@
         } else if (val < 40) {
           msg.className =
             "mt-4 bg-blue-50 p-3 rounded-xl text-sm text-blue-700 font-medium transition-colors";
-          msg.innerText = "샤워하기엔 약간 미지근해요.";
+          msg.innerHTML = "🚿 샤워하기엔 약간 미지근해요.";
           slider.classList.add("caution-mode");
           slider.classList.remove("saving-mode", "warning-mode");
         } else {
@@ -1089,19 +1091,27 @@
         const msg = document.getElementById("res-msg");
         const slider = document.getElementById("res-slider");
 
-        if (val >= 3) {
+        if (val >= 3 && val <= 4) {
           msg.className =
             "mt-4 bg-green-50 p-3 rounded-xl text-sm text-green-700 font-medium transition-colors";
           msg.innerHTML =
             "🌱 <strong>추천!</strong> 바닥이 식기 전에 다시 데워 효율적이에요.";
           slider.classList.add("saving-mode");
           slider.classList.remove("warning-mode", "caution-mode");
-        } else if (val === 2) {
+        } else if (val === 2 || val === 5) {
           msg.className =
             "mt-4 bg-yellow-50 p-3 rounded-xl text-sm text-yellow-700 font-medium transition-colors";
-          msg.innerHTML = "⚠️ 바닥이 아직 따뜻할 때 가동되어 약간 비효율적이에요.";
+          msg.innerHTML = val === 2
+            ? "⚠️ 바닥이 아직 따뜻할 때 가동되어 약간 비효율적이에요."
+            : "⚠️ 바닥이 살짝 식을 수 있어요. 3~4시간이 최적!";
           slider.classList.add("caution-mode");
           slider.classList.remove("saving-mode", "warning-mode");
+        } else if (val >= 6) {
+          msg.className =
+            "mt-4 bg-red-50 p-3 rounded-xl text-sm text-red-700 font-medium transition-colors";
+          msg.innerHTML = "❄️ <strong>비추천!</strong> 바닥이 완전히 식어 재가열 비용이 더 들어요.";
+          slider.classList.add("warning-mode");
+          slider.classList.remove("saving-mode", "caution-mode");
         } else {
           msg.className =
             "mt-4 bg-red-50 p-3 rounded-xl text-sm text-red-700 font-medium transition-colors";
