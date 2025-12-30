@@ -131,6 +131,9 @@
       input[type="range"].saving-mode::-webkit-slider-thumb {
         border: 3px solid #22c55e;
       }
+      input[type="range"].caution-mode::-webkit-slider-thumb {
+        border: 3px solid #eab308;
+      }
       input[type="range"].warning-mode::-webkit-slider-thumb {
         border: 3px solid #ef4444;
       }
@@ -1039,11 +1042,12 @@
 
         if (isSaving) {
           slider.classList.add("saving-mode");
-          slider.classList.remove("warning-mode");
+          slider.classList.remove("warning-mode", "caution-mode");
         } else if (isWarning) {
           slider.classList.add("warning-mode");
-          slider.classList.remove("saving-mode");
+          slider.classList.remove("saving-mode", "caution-mode");
         } else {
+          slider.classList.add("caution-mode");
           slider.classList.remove("saving-mode", "warning-mode");
         }
       }
@@ -1061,11 +1065,12 @@
           msg.innerHTML =
             "🌱 <strong>절약 구간!</strong> 찬물을 섞지 않아 효율적입니다.";
           slider.classList.add("saving-mode");
-          slider.classList.remove("warning-mode");
+          slider.classList.remove("warning-mode", "caution-mode");
         } else if (val < 40) {
           msg.className =
             "mt-4 bg-blue-50 p-3 rounded-xl text-sm text-blue-700 font-medium transition-colors";
           msg.innerText = "샤워하기엔 약간 미지근해요.";
+          slider.classList.add("caution-mode");
           slider.classList.remove("saving-mode", "warning-mode");
         } else {
           msg.className =
@@ -1073,7 +1078,7 @@
           msg.innerHTML =
             "💸 <strong>낭비 주의!</strong> 찬물을 섞게 되어 가스가 낭비됩니다.";
           slider.classList.add("warning-mode");
-          slider.classList.remove("saving-mode");
+          slider.classList.remove("saving-mode", "caution-mode");
         }
       }
 
@@ -1084,17 +1089,25 @@
         const msg = document.getElementById("res-msg");
         const slider = document.getElementById("res-slider");
 
-        if (val >= 3 && val <= 4) {
+        if (val >= 3) {
           msg.className =
             "mt-4 bg-green-50 p-3 rounded-xl text-sm text-green-700 font-medium transition-colors";
           msg.innerHTML =
             "🌱 <strong>추천!</strong> 바닥이 식기 전에 다시 데워줍니다.";
           slider.classList.add("saving-mode");
+          slider.classList.remove("warning-mode", "caution-mode");
+        } else if (val === 2) {
+          msg.className =
+            "mt-4 bg-yellow-50 p-3 rounded-xl text-sm text-yellow-700 font-medium transition-colors";
+          msg.innerText = "3~4시간 간격이 가장 효율적입니다.";
+          slider.classList.add("caution-mode");
+          slider.classList.remove("saving-mode", "warning-mode");
         } else {
           msg.className =
-            "mt-4 bg-[#F9FAFB] p-3 rounded-xl text-sm text-[#4E5968] transition-colors";
-          msg.innerText = "3~4시간 간격이 가장 효율적입니다.";
-          slider.classList.remove("saving-mode");
+            "mt-4 bg-red-50 p-3 rounded-xl text-sm text-red-700 font-medium transition-colors";
+          msg.innerText = "간격이 너무 짧아 가스비 낭비가 될 수 있어요.";
+          slider.classList.add("warning-mode");
+          slider.classList.remove("saving-mode", "caution-mode");
         }
       }
 
