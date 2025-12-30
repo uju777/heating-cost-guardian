@@ -128,6 +128,10 @@
       input[type="range"]:active::-webkit-slider-thumb {
         transform: scale(1.1);
       }
+      /* 슬라이더 손잡이 색상 (CSS 변수와 동기화) */
+      input[type="range"].cold-mode::-webkit-slider-thumb {
+        border: 3px solid #3b82f6;
+      }
       input[type="range"].saving-mode::-webkit-slider-thumb {
         border: 3px solid #22c55e;
       }
@@ -148,61 +152,81 @@
       }
 
       /*
-        🎨 슬라이더 그라데이션 규칙
-        ================================
-        1. 범위 계산: (값 - min) / (max - min) * 100%
-        2. 색상: #fecaca(빨강) #fef08a(노랑) #bbf7d0(초록)
-        3. JS 로직과 반드시 동기화할 것!
+        🎨 슬라이더 색상 시스템 (CSS-JS 동기화 필수!)
+        ================================================
+        색상 변수:
+        --zone-cold: #dbeafe (파랑, 절약but춥)
+        --zone-saving: #bbf7d0 (초록, 최적)
+        --zone-caution: #fef08a (노랑, 주의)
+        --zone-danger: #fecaca (빨강, 위험/낭비)
+
+        계산법: (값 - min) / (max - min) × 100%
+
+        ⚠️ 수정 시 반드시 JS updateXXX() 함수와 동기화!
       */
+      :root {
+        --zone-cold: #dbeafe;
+        --zone-saving: #bbf7d0;
+        --zone-caution: #fef08a;
+        --zone-danger: #fecaca;
+      }
 
       /* 난방 슬라이더 - 실내모드
-         범위: 10-40℃ (30단위), 추천: 22-24℃
-         22℃ = 40%, 24℃ = 47% */
+         범위: 10-40℃, 추천: 22-24℃
+         ├─ <22℃ (0-40%): 파랑 (초절약, 춥지만OK)
+         ├─ 22-24℃ (40-47%): 초록 (최적)
+         └─ >24℃ (47-100%): 빨강 (과다, 낭비) */
       #heating-slider.indoor-mode::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
-          #fecaca 0%, #fecaca 33%,
-          #fef08a 33%, #fef08a 40%,
-          #bbf7d0 40%, #bbf7d0 47%,
-          #fef08a 47%, #fef08a 57%,
-          #fecaca 57%, #fecaca 100%
+          var(--zone-cold) 0%, var(--zone-cold) 40%,
+          var(--zone-saving) 40%, var(--zone-saving) 47%,
+          var(--zone-caution) 47%, var(--zone-caution) 55%,
+          var(--zone-danger) 55%, var(--zone-danger) 100%
         );
       }
 
       /* 난방 슬라이더 - 온돌모드
-         범위: 40-85℃ (45단위), 추천: 50-60℃
-         50℃ = 22%, 60℃ = 44% */
+         범위: 40-85℃, 추천: 50-60℃
+         ├─ <50℃ (0-22%): 파랑 (미지근)
+         ├─ 50-60℃ (22-44%): 초록 (효율)
+         └─ >60℃ (44-100%): 빨강 (고온위험) */
       #heating-slider.ondol-mode::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
-          #fecaca 0%, #fecaca 15%,
-          #fef08a 15%, #fef08a 22%,
-          #bbf7d0 22%, #bbf7d0 44%,
-          #fef08a 44%, #fef08a 56%,
-          #fecaca 56%, #fecaca 100%
+          var(--zone-cold) 0%, var(--zone-cold) 22%,
+          var(--zone-saving) 22%, var(--zone-saving) 44%,
+          var(--zone-caution) 44%, var(--zone-caution) 55%,
+          var(--zone-danger) 55%, var(--zone-danger) 100%
         );
       }
 
       /* 온수 슬라이더
-         범위: 30-60℃ (30단위), 추천: 40-45℃
-         40℃ = 33%, 45℃ = 50% */
+         범위: 30-60℃, 추천: 40-45℃
+         ├─ <40℃ (0-33%): 파랑 (미지근)
+         ├─ 40-45℃ (33-50%): 초록 (최적)
+         └─ >45℃ (50-100%): 빨강 (낭비) */
       #hw-slider::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
-          #fef08a 0%, #fef08a 33%,
-          #bbf7d0 33%, #bbf7d0 50%,
-          #fef08a 50%, #fef08a 67%,
-          #fecaca 67%, #fecaca 100%
+          var(--zone-cold) 0%, var(--zone-cold) 33%,
+          var(--zone-saving) 33%, var(--zone-saving) 50%,
+          var(--zone-caution) 50%, var(--zone-caution) 67%,
+          var(--zone-danger) 67%, var(--zone-danger) 100%
         );
       }
 
       /* 예약 슬라이더
-         범위: 1-9시간 (8단위), 추천: 3-4시간
-         1h=0%, 2h=12.5%, 3h=25%, 4h=37.5%, 5h=50%, 6h=62.5% */
+         범위: 1-9시간, 추천: 3-4시간
+         ├─ 1시간 (0-12.5%): 빨강 (너무 자주)
+         ├─ 2시간 (12.5-25%): 노랑 (비효율)
+         ├─ 3-4시간 (25-37.5%): 초록 (최적)
+         ├─ 5시간 (37.5-50%): 노랑 (식을수도)
+         └─ 6시간+ (50-100%): 빨강 (너무 김) */
       #res-slider::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
-          #fecaca 0%, #fecaca 12.5%,
-          #fef08a 12.5%, #fef08a 25%,
-          #bbf7d0 25%, #bbf7d0 37.5%,
-          #fef08a 37.5%, #fef08a 50%,
-          #fecaca 50%, #fecaca 100%
+          var(--zone-danger) 0%, var(--zone-danger) 12.5%,
+          var(--zone-caution) 12.5%, var(--zone-caution) 25%,
+          var(--zone-saving) 25%, var(--zone-saving) 37.5%,
+          var(--zone-caution) 37.5%, var(--zone-caution) 50%,
+          var(--zone-danger) 50%, var(--zone-danger) 100%
         );
       }
 
@@ -1057,15 +1081,22 @@
           }
         }
 
+        // 손잡이 색상 동기화 (CSS --zone-* 변수와 일치)
+        slider.classList.remove("cold-mode", "saving-mode", "caution-mode", "warning-mode");
         if (isSaving) {
           slider.classList.add("saving-mode");
-          slider.classList.remove("warning-mode", "caution-mode");
         } else if (isWarning) {
           slider.classList.add("warning-mode");
-          slider.classList.remove("saving-mode", "caution-mode");
         } else {
-          slider.classList.add("caution-mode");
-          slider.classList.remove("saving-mode", "warning-mode");
+          // 최적 미만 = cold (파랑), 최적 초과 = caution (노랑) 전이구간
+          const val = parseInt(slider.value);
+          if (mode === "indoor" && val < 22) {
+            slider.classList.add("cold-mode");
+          } else if (mode === "ondol" && val < 50) {
+            slider.classList.add("cold-mode");
+          } else {
+            slider.classList.add("caution-mode");
+          }
         }
       }
 
@@ -1081,21 +1112,21 @@
             "mt-4 bg-green-50 p-3 rounded-xl text-sm text-green-700 font-medium transition-colors";
           msg.innerHTML =
             "🌱 <strong>절약 구간!</strong> 찬물을 섞지 않아 효율적입니다.";
+          slider.classList.remove("cold-mode", "caution-mode", "warning-mode");
           slider.classList.add("saving-mode");
-          slider.classList.remove("warning-mode", "caution-mode");
         } else if (val < 40) {
           msg.className =
             "mt-4 bg-blue-50 p-3 rounded-xl text-sm text-blue-700 font-medium transition-colors";
           msg.innerHTML = "🚿 샤워하기엔 약간 미지근해요.";
-          slider.classList.add("caution-mode");
-          slider.classList.remove("saving-mode", "warning-mode");
+          slider.classList.remove("saving-mode", "caution-mode", "warning-mode");
+          slider.classList.add("cold-mode");
         } else {
           msg.className =
             "mt-4 bg-red-50 p-3 rounded-xl text-sm text-red-700 font-medium transition-colors";
           msg.innerHTML =
             "💸 <strong>낭비 주의!</strong> 찬물을 섞게 되어 가스가 낭비됩니다.";
+          slider.classList.remove("cold-mode", "saving-mode", "caution-mode");
           slider.classList.add("warning-mode");
-          slider.classList.remove("saving-mode", "caution-mode");
         }
       }
 
@@ -1106,13 +1137,15 @@
         const msg = document.getElementById("res-msg");
         const slider = document.getElementById("res-slider");
 
+        // 손잡이 색상 동기화
+        slider.classList.remove("cold-mode", "saving-mode", "caution-mode", "warning-mode");
+
         if (val >= 3 && val <= 4) {
           msg.className =
             "mt-4 bg-green-50 p-3 rounded-xl text-sm text-green-700 font-medium transition-colors";
           msg.innerHTML =
             "🌱 <strong>추천!</strong> 바닥이 식기 전에 다시 데워 효율적이에요.";
           slider.classList.add("saving-mode");
-          slider.classList.remove("warning-mode", "caution-mode");
         } else if (val === 2 || val === 5) {
           msg.className =
             "mt-4 bg-yellow-50 p-3 rounded-xl text-sm text-yellow-700 font-medium transition-colors";
@@ -1120,19 +1153,16 @@
             ? "⚠️ 바닥이 아직 따뜻할 때 가동되어 약간 비효율적이에요."
             : "⚠️ 바닥이 살짝 식을 수 있어요. 3~4시간이 최적!";
           slider.classList.add("caution-mode");
-          slider.classList.remove("saving-mode", "warning-mode");
         } else if (val >= 6) {
           msg.className =
             "mt-4 bg-red-50 p-3 rounded-xl text-sm text-red-700 font-medium transition-colors";
           msg.innerHTML = "❄️ <strong>비추천!</strong> 바닥이 완전히 식어 재가열 비용이 더 들어요.";
           slider.classList.add("warning-mode");
-          slider.classList.remove("saving-mode", "caution-mode");
         } else {
           msg.className =
             "mt-4 bg-red-50 p-3 rounded-xl text-sm text-red-700 font-medium transition-colors";
           msg.innerHTML = "🔥 <strong>비추천!</strong> 너무 자주 가동하면 가스비 낭비에요.";
           slider.classList.add("warning-mode");
-          slider.classList.remove("saving-mode", "caution-mode");
         }
       }
 
