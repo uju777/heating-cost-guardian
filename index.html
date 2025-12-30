@@ -147,47 +147,62 @@
         border-radius: 3px;
       }
 
-      /* 난방 슬라이더 - 실내모드 (22-24 최적) */
+      /*
+        🎨 슬라이더 그라데이션 규칙
+        ================================
+        1. 범위 계산: (값 - min) / (max - min) * 100%
+        2. 색상: #fecaca(빨강) #fef08a(노랑) #bbf7d0(초록)
+        3. JS 로직과 반드시 동기화할 것!
+      */
+
+      /* 난방 슬라이더 - 실내모드
+         범위: 10-40℃ (30단위), 추천: 22-24℃
+         22℃ = 40%, 24℃ = 47% */
       #heating-slider.indoor-mode::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
-          #fecaca 0%, #fecaca 30%,
-          #fef08a 30%, #fef08a 40%,
-          #bbf7d0 40%, #bbf7d0 50%,
-          #fef08a 50%, #fef08a 60%,
-          #fecaca 60%, #fecaca 100%
+          #fecaca 0%, #fecaca 33%,
+          #fef08a 33%, #fef08a 40%,
+          #bbf7d0 40%, #bbf7d0 47%,
+          #fef08a 47%, #fef08a 57%,
+          #fecaca 57%, #fecaca 100%
         );
       }
 
-      /* 난방 슬라이더 - 온돌모드 (50-60 최적) */
+      /* 난방 슬라이더 - 온돌모드
+         범위: 40-85℃ (45단위), 추천: 50-60℃
+         50℃ = 22%, 60℃ = 44% */
       #heating-slider.ondol-mode::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
           #fecaca 0%, #fecaca 15%,
           #fef08a 15%, #fef08a 22%,
-          #bbf7d0 22%, #bbf7d0 45%,
-          #fef08a 45%, #fef08a 55%,
-          #fecaca 55%, #fecaca 100%
+          #bbf7d0 22%, #bbf7d0 44%,
+          #fef08a 44%, #fef08a 56%,
+          #fecaca 56%, #fecaca 100%
         );
       }
 
-      /* 온수 슬라이더 (40-45 최적) */
+      /* 온수 슬라이더
+         범위: 30-60℃ (30단위), 추천: 40-45℃
+         40℃ = 33%, 45℃ = 50% */
       #hw-slider::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
-          #fecaca 0%, #fecaca 25%,
-          #fef08a 25%, #fef08a 40%,
-          #bbf7d0 40%, #bbf7d0 55%,
-          #fef08a 55%, #fef08a 70%,
-          #fecaca 70%, #fecaca 100%
+          #fef08a 0%, #fef08a 33%,
+          #bbf7d0 33%, #bbf7d0 50%,
+          #fef08a 50%, #fef08a 67%,
+          #fecaca 67%, #fecaca 100%
         );
       }
 
-      /* 예약 슬라이더 (3-4시간 최적) */
+      /* 예약 슬라이더
+         범위: 1-9시간 (8단위), 추천: 3-4시간
+         1h=0%, 2h=12.5%, 3h=25%, 4h=37.5%, 5h=50%, 6h=62.5% */
       #res-slider::-webkit-slider-runnable-track {
         background: linear-gradient(to right,
-          #fecaca 0%, #fecaca 12%,
-          #fef08a 12%, #fef08a 25%,
-          #bbf7d0 25%, #bbf7d0 45%,
-          #fef08a 45%, #fef08a 55%,
-          #fecaca 55%, #fecaca 100%
+          #fecaca 0%, #fecaca 12.5%,
+          #fef08a 12.5%, #fef08a 25%,
+          #bbf7d0 25%, #bbf7d0 37.5%,
+          #fef08a 37.5%, #fef08a 50%,
+          #fecaca 50%, #fecaca 100%
         );
       }
 
