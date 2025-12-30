@@ -44,6 +44,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
       body {
         font-family: "Pretendard", sans-serif;
         background-color: #f2f4f6;
@@ -210,18 +211,158 @@
         width: 100%;
         height: 100%;
       }
+
+      /* --- CRT 레트로 스타일 --- */
+      .crt-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-radius: 20px;
+        padding: 20px;
+        margin: 12px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .crt-header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.1) 0px,
+          rgba(0, 0, 0, 0.1) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        pointer-events: none;
+        opacity: 0.3;
+      }
+
+      .crt-title {
+        font-family: "Space Mono", monospace;
+        color: #4ade80;
+        text-shadow:
+          0 0 10px rgba(74, 222, 128, 0.5),
+          0 0 20px rgba(74, 222, 128, 0.3);
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+
+      .crt-subtitle {
+        font-family: "Space Mono", monospace;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        margin-top: 8px;
+        min-height: 1.2em;
+      }
+
+      .typing-cursor {
+        display: inline-block;
+        width: 8px;
+        height: 14px;
+        background-color: #4ade80;
+        margin-left: 2px;
+        animation: blink 1s step-end infinite;
+        vertical-align: middle;
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .crt-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(74, 222, 128, 0.1);
+        border: 1px solid rgba(74, 222, 128, 0.3);
+        border-radius: 20px;
+        padding: 4px 10px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: #4ade80;
+        margin-top: 12px;
+      }
+
+      .crt-dot {
+        width: 6px;
+        height: 6px;
+        background: #4ade80;
+        border-radius: 50%;
+        animation: pulse-dot 2s ease-in-out infinite;
+        box-shadow: 0 0 6px rgba(74, 222, 128, 0.8);
+      }
+
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+
+      .flame-icon {
+        font-size: 1.5rem;
+        filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.6));
+        animation: flicker 3s ease-in-out infinite;
+      }
+
+      @keyframes flicker {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        92% {
+          opacity: 1;
+        }
+        93% {
+          opacity: 0.8;
+        }
+        94% {
+          opacity: 1;
+        }
+        96% {
+          opacity: 0.9;
+        }
+        97% {
+          opacity: 1;
+        }
+      }
     </style>
   </head>
   <body class="flex justify-center min-h-screen">
     <div
       class="w-full max-w-[420px] bg-[#F2F4F6] flex flex-col min-h-screen overflow-hidden relative"
     >
-      <!-- 헤더 -->
-      <div class="px-6 py-6 pb-2 bg-[#F2F4F6]">
-        <h1 class="text-2xl font-bold text-[#191F28]">난방비 요금 지킴이</h1>
-        <p class="text-sm text-[#8B95A1] mt-1">
-          올바른 설정으로 난방비를 아끼세요
-        </p>
+      <!-- CRT 레트로 헤더 -->
+      <div class="crt-header">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <h1 class="crt-title">> 난방비_요금_지킴이</h1>
+            <p class="crt-subtitle">
+              <span id="typing-text"></span><span class="typing-cursor"></span>
+            </p>
+            <div class="crt-badge">
+              <span class="crt-dot"></span>
+              <span>SYSTEM ONLINE</span>
+            </div>
+          </div>
+          <div class="flame-icon">🔥</div>
+        </div>
       </div>
 
       <!-- 탭 메뉴 -->
@@ -893,6 +1034,46 @@
 
       // 초기화
       setHeatingMode("indoor");
+
+      // 타이핑 효과
+      const typingMessages = [
+        "올바른 설정 하나로 올겨울 난방비 절약!",
+        "전문가 추천 온도로 가스비 30% 절감",
+        "실내 22~24℃가 황금 온도입니다",
+        "외출 시 끄지 말고 예약 모드 사용하세요",
+      ];
+      let msgIndex = 0;
+      let charIndex = 0;
+      let isDeleting = false;
+      const typingElement = document.getElementById("typing-text");
+
+      function typeEffect() {
+        const currentMsg = typingMessages[msgIndex];
+
+        if (isDeleting) {
+          typingElement.textContent = currentMsg.substring(0, charIndex - 1);
+          charIndex--;
+        } else {
+          typingElement.textContent = currentMsg.substring(0, charIndex + 1);
+          charIndex++;
+        }
+
+        let typeSpeed = isDeleting ? 30 : 80;
+
+        if (!isDeleting && charIndex === currentMsg.length) {
+          typeSpeed = 2500; // 완성 후 대기
+          isDeleting = true;
+        } else if (isDeleting && charIndex === 0) {
+          isDeleting = false;
+          msgIndex = (msgIndex + 1) % typingMessages.length;
+          typeSpeed = 500; // 다음 문장 전 대기
+        }
+
+        setTimeout(typeEffect, typeSpeed);
+      }
+
+      // 페이지 로드 후 타이핑 시작
+      setTimeout(typeEffect, 800);
 
       // Service Worker 등록 (PWA)
       if ("serviceWorker" in navigator) {
