@@ -1093,19 +1093,19 @@
           msg.className =
             "mt-4 bg-green-50 p-3 rounded-xl text-sm text-green-700 font-medium transition-colors";
           msg.innerHTML =
-            "🌱 <strong>추천!</strong> 바닥이 식기 전에 다시 데워줍니다.";
+            "🌱 <strong>추천!</strong> 바닥이 식기 전에 다시 데워 효율적이에요.";
           slider.classList.add("saving-mode");
           slider.classList.remove("warning-mode", "caution-mode");
         } else if (val === 2) {
           msg.className =
             "mt-4 bg-yellow-50 p-3 rounded-xl text-sm text-yellow-700 font-medium transition-colors";
-          msg.innerText = "3~4시간 간격이 가장 효율적입니다.";
+          msg.innerHTML = "⚠️ 바닥이 아직 따뜻할 때 가동되어 약간 비효율적이에요.";
           slider.classList.add("caution-mode");
           slider.classList.remove("saving-mode", "warning-mode");
         } else {
           msg.className =
             "mt-4 bg-red-50 p-3 rounded-xl text-sm text-red-700 font-medium transition-colors";
-          msg.innerText = "간격이 너무 짧아 가스비 낭비가 될 수 있어요.";
+          msg.innerHTML = "🔥 <strong>비추천!</strong> 너무 자주 가동하면 가스비 낭비에요.";
           slider.classList.add("warning-mode");
           slider.classList.remove("saving-mode", "caution-mode");
         }
