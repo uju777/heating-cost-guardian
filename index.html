@@ -1,0 +1,461 @@
+<!--
+[TO CLAUDE CODE / 개발자 전달 사항]
+
+1. 프로젝트 개요:
+   - "난방비 요금 지킴이"라는 싱글 페이지 웹 앱입니다.
+   - HTML, Tailwind CSS, Vanilla JS로 작성되었습니다.
+   - 사용자가 보일러 설정(실내/온돌/온수/예약)을 시뮬레이션하고, 절약 구간을 시각적으로 학습합니다.
+
+2. 현재 문제점 (Fix Required):
+   - '꿀팁·관리' 탭 > '영상 보고 따라하기' 모달 내의 유튜브 영상(iframe)이 현재 미리보기 환경의 보안 정책(CSP/Sandbox)으로 인해 재생되지 않거나 검은 화면으로 나옵니다.
+   - 모바일 터치 이벤트는 v6 버전에서 개선되었습니다 (input range height 확대).
+
+3. 요청 사항:
+   - 이 코드를 실제 웹 서버(Vercel, GitHub Pages 등)에 배포했을 때 유튜브 iframe이 정상 작동하도록 Content-Security-Policy(CSP) 설정을 점검해주세요.
+   - 필요하다면 YouTube IFrame Player API를 사용하여 안정성을 높여주세요.
+   - 모바일 브라우저 정책상 '자동 재생(autoplay)'이 막힐 수 있으므로, 사용자가 재생 버튼을 눌렀을 때 확실하게 영상이 로드되도록 처리해주세요.
+
+4. 핵심 기능:
+   - 탭 메뉴 (난방, 온수, 예약, 관리)
+   - 모드별(실내/온돌) 슬라이더 범위 및 절약 구간(초록색 바) 동적 변경
+   - 모바일 터치 최적화된 커스텀 슬라이더
+-->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>난방비 요금 지킴이</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #F2F4F6; color: #333D4B; touch-action: manipulation; }
+
+        /* --- UI 컴포넌트 스타일 --- */
+        .card { background-color: #ffffff; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02); }
+        .btn-tab { transition: all 0.2s ease; color: #8B95A1; font-size: 14px; -webkit-tap-highlight-color: transparent; }
+        .btn-tab.active { color: #333D4B; font-weight: 700; }
+        .btn-tab-indicator { height: 2px; width: 0; background-color: #333D4B; transition: all 0.3s ease; margin: 0 auto; }
+        .btn-tab.active .btn-tab-indicator { width: 20px; }
+
+        /* --- 커스텀 슬라이더 (모바일 터치 최적화) --- */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+            height: 44px; /* 터치 영역 확대 (중요) */
+            margin: 0;
+            padding: 0;
+            vertical-align: middle;
+        }
+
+        /* 슬라이더 손잡이 (Thumb) */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border: 1px solid #E5E8EB;
+            cursor: pointer;
+            margin-top: -11px;
+            transition: border-color 0.2s, transform 0.1s;
+            position: relative;
+            z-index: 20;
+        }
+        input[type=range]:active::-webkit-slider-thumb { transform: scale(1.1); }
+        input[type=range].saving-mode::-webkit-slider-thumb { border: 3px solid #22c55e; }
+        input[type=range].warning-mode::-webkit-slider-thumb { border: 3px solid #ef4444; }
+
+        /* 슬라이더 트랙 (Track) */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #E5E8EB;
+            border-radius: 3px;
+        }
+
+        /* --- 기타 스타일 --- */
+        .mode-chip { border: 1px solid #E5E8EB; border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+        .mode-chip:active { background-color: #f9fafb; transform: scale(0.98); }
+        .mode-chip.selected { background-color: #E8F3FF; border-color: #3182ce; color: #3182ce; font-weight: 700; box-shadow: 0 0 0 1px #3182ce; }
+
+        .guide-bar-container { position: relative; height: 6px; margin-top: -25px; margin-bottom: 19px; border-radius: 3px; pointer-events: none; z-index: 0; padding: 0 2px; }
+        .guide-good { position: absolute; height: 100%; background-color: #86efac; opacity: 1; border-radius: 3px; }
+
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .modal { transition: opacity 0.2s ease; z-index: 50; }
+        .modal-content { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .modal.hidden { opacity: 0; pointer-events: none; }
+        .modal.hidden .modal-content { transform: translateY(100%); }
+
+        .play-btn { transition: transform 0.2s; }
+        .video-thumbnail:hover .play-btn { transform: scale(1.1); }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    </style>
+</head>
+<body class="flex justify-center min-h-screen">
+
+    <div class="w-full max-w-[420px] bg-[#F2F4F6] flex flex-col min-h-screen overflow-hidden relative">
+
+        <!-- 헤더 -->
+        <div class="px-6 py-6 pb-2 bg-[#F2F4F6]">
+            <h1 class="text-2xl font-bold text-[#191F28]">난방비 요금 지킴이</h1>
+            <p class="text-sm text-[#8B95A1] mt-1">올바른 설정으로 난방비를 아끼세요</p>
+        </div>
+
+        <!-- 탭 메뉴 -->
+        <div class="flex border-b border-[#E5E8EB] px-2 sticky top-0 bg-[#F2F4F6] z-10 overflow-x-auto no-scrollbar">
+            <button onclick="showTab('heating')" class="flex-1 py-4 text-center btn-tab active min-w-[60px]" id="tab-btn-heating">난방<div class="btn-tab-indicator mt-1"></div></button>
+            <button onclick="showTab('water')" class="flex-1 py-4 text-center btn-tab min-w-[60px]" id="tab-btn-water">온수<div class="btn-tab-indicator mt-1"></div></button>
+            <button onclick="showTab('reserve')" class="flex-1 py-4 text-center btn-tab min-w-[60px]" id="tab-btn-reserve">예약<div class="btn-tab-indicator mt-1"></div></button>
+            <button onclick="showTab('check')" class="flex-1 py-4 text-center btn-tab min-w-[70px]" id="tab-btn-check">꿀팁·관리<div class="btn-tab-indicator mt-1"></div></button>
+        </div>
+
+        <!-- 메인 컨텐츠 영역 -->
+        <div class="flex-1 overflow-y-auto p-5 space-y-4 pb-8 scroll-smooth">
+
+            <!-- 1. 난방 설정 탭 -->
+            <div id="tab-heating" class="fade-in space-y-4">
+                <div class="card">
+                    <h2 class="text-lg font-bold mb-4 text-[#191F28]">난방 기준 선택</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div onclick="setHeatingMode('indoor')" id="chip-indoor" class="mode-chip selected">
+                            <span class="text-3xl mb-2">🏠</span><span class="text-sm">실내 (공기)</span>
+                        </div>
+                        <div onclick="setHeatingMode('ondol')" id="chip-ondol" class="mode-chip">
+                            <span class="text-3xl mb-2">♨️</span><span class="text-sm">온돌 (바닥)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-[#F9FAFB] rounded-xl">
+                        <p class="text-xs text-[#6B7684] leading-relaxed" id="mode-desc">단열이 잘 되는 아파트는 <strong>실내 모드</strong>가 유리합니다.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="flex justify-between items-end mb-6">
+                        <div>
+                            <span class="text-xs font-bold text-[#8B95A1] block mb-1">설정 온도</span>
+                            <span class="text-4xl font-bold text-[#191F28]" id="temp-display">24</span><span class="text-xl text-[#8B95A1] font-medium ml-1">℃</span>
+                        </div>
+                        <div id="temp-badge" class="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold transition-colors">쾌적</div>
+                    </div>
+
+                    <div class="relative pt-2 pb-2">
+                        <input type="range" id="heating-slider" class="w-full relative z-20" oninput="updateHeatingUI()" onchange="updateHeatingUI()">
+                        <div class="guide-bar-container">
+                            <div id="saving-zone-indoor" class="guide-good" style="left: 40%; width: 10%;"></div>
+                            <div id="saving-zone-ondol" class="guide-good hidden" style="left: 22%; width: 22%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between text-xs text-[#8B95A1] font-medium mt-1 font-mono">
+                        <span id="slider-min">10</span><span id="slider-max">40</span>
+                    </div>
+                    <div id="temp-msg-box" class="mt-4 p-3 rounded-xl bg-gray-50 text-sm font-medium text-gray-600 transition-colors">일반적으로 22~24도가 적당합니다.</div>
+                </div>
+            </div>
+
+            <!-- 2. 온수 설정 탭 -->
+            <div id="tab-water" class="hidden fade-in space-y-4">
+                <div class="card">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-lg font-bold text-[#191F28]">🚿 온수 온도</h2>
+                        <span class="text-2xl font-bold text-[#333D4B]" id="hw-display">45<span class="text-base text-[#8B95A1] font-normal">℃</span></span>
+                    </div>
+                    <p class="text-xs text-[#8B95A1] mb-6">샤워나 설거지할 때 나오는 물 온도</p>
+
+                    <div class="relative pt-2 pb-2">
+                        <input type="range" min="30" max="60" value="45" id="hw-slider" class="w-full relative z-20 saving-mode" oninput="updateHotWater(this.value)" onchange="updateHotWater(this.value)">
+                        <div class="guide-bar-container"><div class="guide-good" style="left: 33%; width: 17%;"></div></div>
+                    </div>
+
+                    <div class="flex justify-between text-xs text-[#8B95A1] mt-1">
+                        <span>30℃</span><span class="font-bold text-green-600">추천 40~45℃</span><span>60℃</span>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-xl text-sm text-green-700 font-medium transition-colors mt-4" id="hw-msg">가스비 절약에 가장 이상적인 구간입니다.</div>
+                </div>
+            </div>
+
+            <!-- 3. 예약 설정 탭 -->
+            <div id="tab-reserve" class="hidden fade-in space-y-4">
+                <div class="card">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-lg font-bold text-[#191F28]">⏰ 외출 시 반복</h2>
+                        <span class="text-2xl font-bold text-[#333D4B]" id="res-display">3<span class="text-base text-[#8B95A1] font-normal">시간</span></span>
+                    </div>
+                    <p class="text-xs text-[#8B95A1] mb-6">설정한 시간 간격마다 난방을 가동합니다</p>
+
+                    <div class="relative pt-2 pb-2">
+                        <input type="range" min="1" max="9" value="3" id="res-slider" class="w-full relative z-20 saving-mode" oninput="updateReserve(this.value)" onchange="updateReserve(this.value)">
+                        <div class="guide-bar-container"><div class="guide-good" style="left: 22%; width: 22%;"></div></div>
+                    </div>
+
+                    <div class="flex justify-between text-xs text-[#8B95A1] mt-1">
+                        <span>1h</span><span class="font-bold text-green-600">추천 3~4h</span><span>9h</span>
+                    </div>
+                    <div class="bg-[#F9FAFB] p-3 rounded-xl text-sm text-[#4E5968] mt-4" id="res-msg">식은 바닥을 데우는 비용을 아끼려면<br>끄지 말고 예약을 사용하세요.</div>
+                </div>
+            </div>
+
+            <!-- 4. 꿀팁·관리 탭 -->
+            <div id="tab-check" class="hidden fade-in space-y-4">
+                <div class="card bg-white border border-[#E5E8EB]">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-[#191F28] mb-1">배관 공기 빼기</h2>
+                            <p class="text-sm text-[#6B7684]">난방 효율 2배 높이는 방법</p>
+                        </div>
+                        <span class="text-2xl">🛠</span>
+                    </div>
+                    <button onclick="openModal()" class="w-full py-3.5 bg-[#F2F4F6] text-[#333D4B] font-bold rounded-xl text-sm hover:bg-[#E5E8EB] transition flex items-center justify-center active:bg-gray-200">
+                        영상 보고 따라하기
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+
+                <div class="card border border-red-100 bg-red-50/30">
+                    <div class="flex items-start">
+                        <span class="text-2xl mr-3">❄️</span>
+                        <div>
+                            <h2 class="text-lg font-bold text-[#E53E3E]">동파 주의</h2>
+                            <p class="text-sm text-[#4E5968] mt-2 leading-relaxed">사용하지 않는 방이라도 밸브를<br><strong>절대로 완전히 잠그지 마세요.</strong></p>
+                            <div class="mt-3 flex items-center gap-2 text-xs font-bold bg-white px-3 py-2 rounded-lg inline-flex shadow-sm">
+                                <span class="text-[#8B95A1] line-through decoration-2">완전 잠금(X)</span><span class="text-[#8B95A1]">→</span><span class="text-[#3182ce]">미세 개방(O)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2">
+                    <h3 class="text-xs font-bold text-[#8B95A1] mb-3 uppercase tracking-wider">가스비 절약 공식</h3>
+                    <ul class="text-sm text-[#4E5968] space-y-3">
+                        <li class="flex justify-between border-b border-[#E5E8EB] pb-2 items-center">
+                            <span class="flex items-center">🏠 실내 모드 <span class="ml-2 w-2 h-2 bg-green-400 rounded-full"></span></span><span class="font-bold text-green-700">22 ~ 24℃</span>
+                        </li>
+                        <li class="flex justify-between border-b border-[#E5E8EB] pb-2 items-center">
+                            <span class="flex items-center">♨️ 온돌 모드 <span class="ml-2 w-2 h-2 bg-green-400 rounded-full"></span></span><span class="font-bold text-green-700">50 ~ 60℃</span>
+                        </li>
+                        <li class="flex justify-between border-b border-[#E5E8EB] pb-2 items-center">
+                            <span class="flex items-center">🚿 온수 온도 <span class="ml-2 w-2 h-2 bg-green-400 rounded-full"></span></span><span class="font-bold text-green-700">40 ~ 45℃</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 공기 빼기 가이드 모달 -->
+        <div id="air-modal" class="modal hidden fixed inset-0 flex items-end justify-center">
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
+
+            <div class="modal-content bg-white w-full max-w-[420px] rounded-t-[32px] p-6 pb-10 relative z-10 h-[90vh] overflow-y-auto">
+                <div class="w-10 h-1 bg-[#E5E8EB] rounded-full mx-auto mb-6"></div>
+
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-[#191F28]">영상으로 따라하기</h2>
+                    <button onclick="closeModal()" class="p-2 -mr-2 text-gray-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                </div>
+
+                <!-- 유튜브 인앱 재생 (썸네일 클릭 -> iframe 로드) -->
+                <!-- [개발자 노트] CSP 제한으로 인해 iframe 재생이 안 될 경우를 대비해 썸네일+재생버튼 UI로 구성했습니다. -->
+                <div class="mb-8 bg-black rounded-xl overflow-hidden shadow-lg relative" style="padding-bottom: 56.25%;">
+                    <div id="video-placeholder" class="absolute inset-0 w-full h-full cursor-pointer group" onclick="playVideo()">
+                        <img src="https://img.youtube.com/vi/JxUC_a1HOVA/maxresdefault.jpg" alt="보일러 에어빼기 썸네일" class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                            <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-xl play-btn group-hover:scale-110 transition-transform">
+                                <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-3 right-3 bg-black/80 text-white text-xs px-2 py-1 rounded font-bold">터치하여 재생</div>
+                    </div>
+                </div>
+
+                <!-- 핵심 요약 리스트 -->
+                <h3 class="font-bold text-lg text-[#333D4B] mb-2">핵심 요약</h3>
+                <p class="text-sm text-[#8B95A1] mb-6">30년 경력의 전문가가 알려주는 안전한 방법입니다.</p>
+
+                <div class="space-y-6 relative pb-10">
+                    <div class="absolute left-[15px] top-4 bottom-4 w-[2px] bg-[#F2F4F6] -z-10"></div>
+                    <div class="flex gap-4">
+                        <div class="flex-none w-8 h-8 rounded-full bg-[#3182ce] text-white flex items-center justify-center font-bold text-sm">1</div>
+                        <div><h3 class="font-bold text-lg text-[#333D4B] mb-1">안전 장비 준비</h3><p class="text-sm text-[#6B7684]">고무장갑과 물 받을 통을 준비하세요.</p></div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-none w-8 h-8 rounded-full bg-[#3182ce] text-white flex items-center justify-center font-bold text-sm">2</div>
+                        <div><h3 class="font-bold text-lg text-[#333D4B] mb-1">에어 핀 개방</h3><p class="text-sm text-[#6B7684]">분배기의 작은 밸브를 시계 반대 방향으로 천천히 돌리세요.</p></div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-none w-8 h-8 rounded-full bg-[#3182ce] text-white flex items-center justify-center font-bold text-sm">3</div>
+                        <div><h3 class="font-bold text-lg text-[#333D4B] mb-1">공기 배출 확인</h3><p class="text-sm text-[#6B7684]">치익 소리가 멈추고 물이 일정하게 나오면 잠그세요.</p></div>
+                    </div>
+                </div>
+
+                <div class="sticky bottom-0 bg-white pt-4 pb-2 border-t border-gray-100">
+                    <button onclick="closeModal()" class="w-full py-4 bg-[#3182ce] text-white font-bold rounded-2xl text-lg hover:bg-blue-600 transition shadow-lg shadow-blue-200 active:scale-95">확인 완료</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let mode = 'indoor';
+
+        function showTab(tabName) {
+            ['heating', 'water', 'reserve', 'check'].forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const content = document.getElementById(`tab-${t}`);
+                if (t === tabName) {
+                    btn.classList.add('active');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('active');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function setHeatingMode(selectedMode) {
+            mode = selectedMode;
+            const indoorChip = document.getElementById('chip-indoor');
+            const ondolChip = document.getElementById('chip-ondol');
+            const slider = document.getElementById('heating-slider');
+            const min = document.getElementById('slider-min');
+            const max = document.getElementById('slider-max');
+            const desc = document.getElementById('mode-desc');
+            const zoneIndoor = document.getElementById('saving-zone-indoor');
+            const zoneOndol = document.getElementById('saving-zone-ondol');
+
+            if (mode === 'indoor') {
+                indoorChip.classList.add('selected'); ondolChip.classList.remove('selected');
+                slider.min = 10; slider.max = 40; slider.value = 24;
+                min.innerText = "10"; max.innerText = "40";
+                desc.innerHTML = "단열이 잘 되는 아파트는 <strong>실내 모드</strong>가 유리합니다.";
+                zoneIndoor.classList.remove('hidden'); zoneOndol.classList.add('hidden');
+            } else {
+                ondolChip.classList.add('selected'); indoorChip.classList.remove('selected');
+                slider.min = 40; slider.max = 85; slider.value = 55;
+                min.innerText = "40"; max.innerText = "85";
+                desc.innerHTML = "외풍이 심하거나 단독주택은 <strong>온돌 모드</strong>가 유리합니다.";
+                zoneIndoor.classList.add('hidden'); zoneOndol.classList.remove('hidden');
+            }
+            updateHeatingUI();
+        }
+
+        function updateHeatingUI() {
+            const val = parseInt(document.getElementById('heating-slider').value);
+            document.getElementById('temp-display').innerText = val;
+            const badge = document.getElementById('temp-badge');
+            const msgBox = document.getElementById('temp-msg-box');
+            const slider = document.getElementById('heating-slider');
+
+            let isSaving = false, isWarning = false;
+
+            if (mode === 'indoor') {
+                if (val >= 22 && val <= 24) {
+                    badge.innerText = "절약 구간"; badge.className = "px-3 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-bold transition-colors";
+                    msgBox.innerHTML = "🌱 <strong>훌륭해요!</strong> 쾌적함과 절약의 균형이 딱 맞아요.";
+                    msgBox.className = "mt-4 p-3 rounded-xl bg-green-50 text-sm text-green-700 font-medium transition-colors";
+                    isSaving = true;
+                } else if (val < 22) {
+                    badge.innerText = "초절약"; badge.className = "px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold transition-colors";
+                    msgBox.innerHTML = "💰 <strong>가스비는 아끼지만</strong> 조금 서늘할 수 있어요.";
+                    msgBox.className = "mt-4 p-3 rounded-xl bg-gray-50 text-sm text-gray-600 font-medium transition-colors";
+                } else {
+                    badge.innerText = "과다"; badge.className = "px-3 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors";
+                    msgBox.innerHTML = "💸 <strong>주의!</strong> 25도 이상은 가스비가 급증합니다.";
+                    msgBox.className = "mt-4 p-3 rounded-xl bg-red-50 text-sm text-red-600 font-medium transition-colors";
+                    isWarning = true;
+                }
+            } else {
+                if (val >= 50 && val <= 60) {
+                    badge.innerText = "효율 구간"; badge.className = "px-3 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-bold transition-colors";
+                    msgBox.innerHTML = "🌱 <strong>나이스!</strong> 전문가가 추천하는 효율 구간입니다.";
+                    msgBox.className = "mt-4 p-3 rounded-xl bg-green-50 text-sm text-green-700 font-medium transition-colors";
+                    isSaving = true;
+                } else if (val < 50) {
+                    badge.innerText = "미지근"; badge.className = "px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold transition-colors";
+                    msgBox.innerHTML = "🌡️ <strong>봄/가을용</strong> 온도입니다.";
+                    msgBox.className = "mt-4 p-3 rounded-xl bg-gray-50 text-sm text-gray-600 font-medium transition-colors";
+                } else {
+                    badge.innerText = "고온"; badge.className = "px-3 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors";
+                    msgBox.innerHTML = "🔥 <strong>주의!</strong> 너무 뜨거워 화상 위험이 있습니다.";
+                    msgBox.className = "mt-4 p-3 rounded-xl bg-red-50 text-sm text-red-600 font-medium transition-colors";
+                    isWarning = true;
+                }
+            }
+
+            if(isSaving) { slider.classList.add('saving-mode'); slider.classList.remove('warning-mode'); }
+            else if(isWarning) { slider.classList.add('warning-mode'); slider.classList.remove('saving-mode'); }
+            else { slider.classList.remove('saving-mode', 'warning-mode'); }
+        }
+
+        function updateHotWater(val) {
+            val = parseInt(val);
+            document.getElementById('hw-display').innerHTML = `${val}<span class="text-base text-[#8B95A1] font-normal">℃</span>`;
+            const msg = document.getElementById('hw-msg');
+            const slider = document.getElementById('hw-slider');
+
+            if (val >= 40 && val <= 45) {
+                msg.className = "mt-4 bg-green-50 p-3 rounded-xl text-sm text-green-700 font-medium transition-colors";
+                msg.innerHTML = "🌱 <strong>절약 구간!</strong> 찬물을 섞지 않아 효율적입니다.";
+                slider.classList.add('saving-mode'); slider.classList.remove('warning-mode');
+            } else if (val < 40) {
+                 msg.className = "mt-4 bg-blue-50 p-3 rounded-xl text-sm text-blue-700 font-medium transition-colors";
+                 msg.innerText = "샤워하기엔 약간 미지근해요.";
+                 slider.classList.remove('saving-mode', 'warning-mode');
+            } else {
+                msg.className = "mt-4 bg-red-50 p-3 rounded-xl text-sm text-red-700 font-medium transition-colors";
+                msg.innerHTML = "💸 <strong>낭비 주의!</strong> 찬물을 섞게 되어 가스가 낭비됩니다.";
+                slider.classList.add('warning-mode'); slider.classList.remove('saving-mode');
+            }
+        }
+
+        function updateReserve(val) {
+            val = parseInt(val);
+            document.getElementById('res-display').innerHTML = `${val}<span class="text-base text-[#8B95A1] font-normal">시간</span>`;
+            const msg = document.getElementById('res-msg');
+            const slider = document.getElementById('res-slider');
+
+            if(val >= 3 && val <= 4) {
+                 msg.className = "mt-4 bg-green-50 p-3 rounded-xl text-sm text-green-700 font-medium transition-colors";
+                 msg.innerHTML = "🌱 <strong>추천!</strong> 바닥이 식기 전에 다시 데워줍니다.";
+                 slider.classList.add('saving-mode');
+            } else {
+                 msg.className = "mt-4 bg-[#F9FAFB] p-3 rounded-xl text-sm text-[#4E5968] transition-colors";
+                 msg.innerText = "3~4시간 간격이 가장 효율적입니다.";
+                 slider.classList.remove('saving-mode');
+            }
+        }
+
+        function openModal() { document.getElementById('air-modal').classList.remove('hidden'); }
+        function closeModal() {
+            document.getElementById('air-modal').classList.add('hidden');
+            // 재생 중지 (UI 초기화)
+            document.getElementById('video-placeholder').innerHTML = `
+                <img src="https://img.youtube.com/vi/JxUC_a1HOVA/maxresdefault.jpg" alt="보일러 에어빼기 썸네일" class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-xl play-btn group-hover:scale-110 transition-transform">
+                        <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                </div>
+                <div class="absolute bottom-3 right-3 bg-black/80 text-white text-xs px-2 py-1 rounded font-bold">터치하여 재생</div>
+            `;
+        }
+
+        // 유튜브 Iframe 교체 함수
+        function playVideo() {
+            const placeholder = document.getElementById('video-placeholder');
+            placeholder.innerHTML = '<iframe src="https://www.youtube.com/embed/JxUC_a1HOVA?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute inset-0 w-full h-full"></iframe>';
+        }
+
+        // 초기화
+        setHeatingMode('indoor');
+    </script>
+</body>
+</html>
