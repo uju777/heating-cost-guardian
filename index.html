@@ -144,6 +144,48 @@
         border-radius: 3px;
       }
 
+      /* 난방 슬라이더 - 실내모드 (22-24 최적) */
+      #heating-slider.indoor-mode::-webkit-slider-runnable-track {
+        background: linear-gradient(to right,
+          #fecaca 0%, #fecaca 30%,
+          #fef08a 30%, #fef08a 40%,
+          #bbf7d0 40%, #bbf7d0 50%,
+          #fef08a 50%, #fef08a 60%,
+          #fecaca 60%, #fecaca 100%
+        );
+      }
+
+      /* 난방 슬라이더 - 온돌모드 (50-60 최적) */
+      #heating-slider.ondol-mode::-webkit-slider-runnable-track {
+        background: linear-gradient(to right,
+          #fecaca 0%, #fecaca 15%,
+          #fef08a 15%, #fef08a 22%,
+          #bbf7d0 22%, #bbf7d0 45%,
+          #fef08a 45%, #fef08a 55%,
+          #fecaca 55%, #fecaca 100%
+        );
+      }
+
+      /* 온수 슬라이더 (40-45 최적) */
+      #hw-slider::-webkit-slider-runnable-track {
+        background: linear-gradient(to right,
+          #fecaca 0%, #fecaca 25%,
+          #fef08a 25%, #fef08a 40%,
+          #bbf7d0 40%, #bbf7d0 55%,
+          #fef08a 55%, #fef08a 70%,
+          #fecaca 70%, #fecaca 100%
+        );
+      }
+
+      /* 예약 슬라이더 (3시간 이상 최적) */
+      #res-slider::-webkit-slider-runnable-track {
+        background: linear-gradient(to right,
+          #fecaca 0%, #fecaca 15%,
+          #fef08a 15%, #fef08a 25%,
+          #bbf7d0 25%, #bbf7d0 100%
+        );
+      }
+
       /* --- 기타 스타일 --- */
       .mode-chip {
         border: 1px solid #e5e8eb;
@@ -478,7 +520,7 @@
               <input
                 type="range"
                 id="heating-slider"
-                class="w-full relative z-20"
+                class="w-full relative z-20 indoor-mode"
                 oninput="updateHeatingUI()"
                 onchange="updateHeatingUI()"
               />
@@ -908,6 +950,8 @@
             "단열이 잘 되는 아파트는 <strong>실내 모드</strong>가 유리합니다.";
           zoneIndoor.classList.remove("hidden");
           zoneOndol.classList.add("hidden");
+          slider.classList.add("indoor-mode");
+          slider.classList.remove("ondol-mode");
         } else {
           ondolChip.classList.add("selected");
           indoorChip.classList.remove("selected");
@@ -920,6 +964,8 @@
             "외풍이 심하거나 단독주택은 <strong>온돌 모드</strong>가 유리합니다.";
           zoneIndoor.classList.add("hidden");
           zoneOndol.classList.remove("hidden");
+          slider.classList.add("ondol-mode");
+          slider.classList.remove("indoor-mode");
         }
         updateHeatingUI();
       }
