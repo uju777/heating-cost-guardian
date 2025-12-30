@@ -39,6 +39,18 @@
     />
     <meta name="apple-mobile-web-app-title" content="난방비지킴이" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <!-- Open Graph / 소셜 미리보기 -->
+    <meta property="og:title" content="난방비 요금 지킴이" />
+    <meta
+      property="og:description"
+      content="올바른 보일러 설정으로 올겨울 난방비를 절약하세요"
+    />
+    <meta
+      property="og:image"
+      content="https://heating-cost-guardian.netlify.app/og-image.png"
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
     <title>난방비 요금 지킴이</title>
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1041,7 +1053,7 @@
       function playVideo() {
         const placeholder = document.getElementById("video-placeholder");
         placeholder.innerHTML =
-          '<iframe src="https://www.youtube.com/embed/JxUC_a1HOVA?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute inset-0 w-full h-full"></iframe>';
+          '<iframe src="https://www.youtube.com/embed/JxUC_a1HOVA?autoplay=1&start=60" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute inset-0 w-full h-full"></iframe>';
       }
 
       // 초기화
@@ -1052,7 +1064,7 @@
         "올바른 설정 하나로 올겨울 난방비 절약!",
         "전문가 추천 온도로 가스비 30% 절감",
         "실내 22~24℃가 황금 온도입니다",
-        "외출 시 끄지 말고 예약 모드 사용하세요",
+        "외출 시 끄지 말고 3시간마다 자동예약!",
       ];
       let msgIndex = 0;
       let charIndex = 0;
