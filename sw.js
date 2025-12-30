@@ -1,4 +1,4 @@
-const CACHE_NAME = "heating-guardian-v10";
+const CACHE_NAME = "heating-guardian-v11";
 const urlsToCache = [
   "/",
   "/index.html",
